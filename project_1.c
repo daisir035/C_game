@@ -18,7 +18,7 @@
 #define G 400
 #define PLAYER_JUMP_SPD 350.0f // 跳跃速度
 #define PLAYER_HOR_SPD 200.0f // 地速
-        time_t start,end,diff;
+
 
 typedef struct Player {
     Vector2 position; // 位置
@@ -28,6 +28,8 @@ typedef struct Player {
     bool canJump;
     bool boost;
     int jumpt;
+    int jumpt2;
+    int ajumpt;
     int boostt; // 是否可以跳跃
 } Player;
 
@@ -54,9 +56,7 @@ int main(void)
     const int screenWidth = 1300;
     const int screenHeight = 600; //窗口尺寸
     InitWindow(screenWidth, screenHeight, "game"); //初始化窗口
-    SetTargetFPS(60); //设置帧率
-
-
+    SetTargetFPS(144); //设置帧率
 
     Vector2 aimPosition = { 0, 0 }; // 准星位置
     int currentGesture = GESTURE_NONE; // 当前手势
@@ -146,17 +146,14 @@ int main(void)
                 DrawRectangleRec(playerRect, RED);
 
 
-                if (player.jumpt ==50)
+                if (player.jumpt==0)
                 {
-                DrawCircle(player.position.x-20, player.position.y+10, 10, WHITE);
+                    DrawCircle(player.position.x-20, player.position.y+10, 10, WHITE);  //二段跳云雾
                 }
-
-
-
 
             EndMode2D();
 
-            DrawText("Controls:", 20, 20, 20, BLACK);                                   //横 纵 字号 颜色 ui文字
+            DrawText("Controls:", 20, 20, 20, BLACK);                                   //ui文字 坐标(左上原点),字号, 颜色,ui文字
             DrawText("- Right/Left to move", 40, 60, 20, DARKGRAY);
             DrawText("- Space to jump", 40, 100, 20, DARKGRAY);
             DrawText("- Mouse Wheel to Zoom in-out, R to reset zoom", 40, 80, 0, DARKGRAY);
@@ -168,24 +165,25 @@ int main(void)
             DrawText(TextFormat("can jump = %d", player.canJump), 40 , 320, 20, BLACK);
             DrawText(TextFormat("jumpt = %d", player.jumpt), 40 , 360, 20, BLACK);
             DrawText(TextFormat("BOOST = %d", player.boostt),40, 380,20, BLACK);
+            DrawText(TextFormat("ajumpt = %d",player.ajumpt),40, 400,20, BLACK);
             DrawText(cameraDescriptions[cameraOption], 250, 160, 10, DARKGRAY);
             DrawRectangleLines(650, 50, 20, 20,BLACK);
             if (IsKeyDown(KEY_A)) DrawRectangle(650, 50, 20, 20,DARKGRAY);
-            DrawRectangleLines(675, 50, 20, 20,BLACK);
+                DrawRectangleLines(675, 50, 20, 20,BLACK);
             if (IsKeyDown(KEY_S)) DrawRectangle(675, 50, 20, 20,DARKGRAY);
             DrawRectangleLines(700, 50, 20, 20,BLACK);
             if (IsKeyDown(KEY_D)) DrawRectangle(700, 50, 20, 20,DARKGRAY);
-            DrawRectangleLines(675, 25, 20, 20,BLACK);
+                DrawRectangleLines(675, 25, 20, 20,BLACK);
             if (IsKeyDown(KEY_W)) DrawRectangle(675, 25, 20, 20,DARKGRAY);
-            DrawRectangleLines(650,75, 100, 20,BLACK);
+                DrawRectangleLines(650,75, 100, 20,BLACK);
             if (IsKeyDown(KEY_SPACE)) DrawRectangle(650,75, 100, 20,DARKGRAY);
 
 
-            DrawRectangleLines(550,75, 80, 20,BLACK);
+            DrawRectangleLines(550,75, 80, 20,BLACK);                               // 闪现槽
             if (IsKeyDown(KEY_LEFT_SHIFT)) DrawRectangle(550,75, 80, 20,DARKGRAY);
-
-            DrawRectangleLines(40,410, 20, 20,BLACK);
-            if (player.boost) DrawRectangle(40,410, 20, 20,GREEN);
+                DrawRectangleLines(40,440, 20, 20,BLACK);
+            if (player.boost)                                                       // 闪现指示
+                DrawRectangle(40,440, 20, 20,GREEN);
 
 
 
@@ -207,22 +205,8 @@ void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float d
     
     player->position.x += player->speedh*delt; // 水平移动
 
-    if (IsKeyDown(KEY_SPACE) && player->canJump ) // 跳
-    {
-        player->speed = -PLAYER_JUMP_SPD;
-        player->canJump =false; 
-    }
 
-    if (player->speed < 0 && player->speed >-450) // 二段跳检测
-    {
-            player->jumpt -=1;
-    }
-    
-    if (IsKeyDown(KEY_SPACE) && player->jumpt<-20) // 二段跳
-    {
-        player->speed = -0.7*PLAYER_JUMP_SPD;
-        player->jumpt =50;
-    }
+
 
     if (IsKeyDown(KEY_A))                         
     {
@@ -240,33 +224,51 @@ void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float d
         player->speedh += G*delt;       // 向右跑
     }
     
-
-
-
-if (player->speed < 600 && player->speed >-600) // 加速cd
+    if (IsKeyPressed(KEY_SPACE) && player->jumpt>0 ) // 跳 空跳 二段跳
     {
-            player->boostt -=1;
+        if (player->jumpt==2)
+        {
+           if (player->ajumpt<10) {
+                player->speed = -PLAYER_JUMP_SPD;
+                player->jumpt =1;
+                player->canJump = false;
+            }
+            else if(player->ajumpt>10)
+            {
+                player->speed = -0.8*PLAYER_JUMP_SPD;
+                player->jumpt -=3;
+            }
+        }
+
+        else if (player->jumpt==1)
+        {
+            player->speed = -0.8*PLAYER_JUMP_SPD;
+            player->jumpt =0;
+        }
     }
-if (player->boostt<0)
-{
-    player->boost  = true;
-}
 
 
+    if (player->speed < 600 && player->speed >-600) // 加速cd
+    {
+        player->boostt +=1;                         // 充能数值
+    }
+    if (player->boostt>500)                         // 充能阈值
+    {
+        player->boost  = true;
+    }
 
 
-
-    if (IsKeyDown(KEY_LEFT_SHIFT) && IsKeyDown(KEY_A) && player->boost) 
+    if (IsKeyPressed(KEY_LEFT_SHIFT) && IsKeyDown(KEY_A) && player->boost)   //闪现
     {
         player->position.x -= 200;
-        player->boostt =100;
+        player->boostt =0;
         player->boost  = false;
     }
-    if (IsKeyDown(KEY_LEFT_SHIFT) && IsKeyDown(KEY_D) && player->boost) 
+    if (IsKeyPressed(KEY_LEFT_SHIFT) && IsKeyDown(KEY_D) && player->boost) 
     {
         player->position.x += 200;
         player->speedh = 600;       // 加速
-        player->boostt =100;
+        player->boostt =0;
         player->boost  = false;
         }
 
@@ -281,11 +283,6 @@ if (player->boostt<0)
 
     if (player->speedh > 350  ) player->speedh = 350;
     if (player->speedh < -350 ) player->speedh = -350;  // 限速
-
-    // else if (player->speedh > 0) player->speedh -= PLAYER_HOR_SPD*delt;
-    // else if (player->speedh < 0) player->speedh += PLAYER_HOR_SPD*delt;
-    // DrawText("The frictional force", 40, 250, 10, DARKGRAY);
-
 // 碰撞检测-----------------------------------------------------------------------------
     int hitObstacle = 0;
     for (int i = 0; i < envItemsLength; i++)
@@ -301,10 +298,13 @@ if (player->boostt<0)
             ei->rect.y >= p->y &&                       // 玩家在上方
             ei->rect.y < p->y + player->speed*delt)     // 玩家下一帧在下方
         {
-            hitObstacle = 1;        // 碰撞
-            player->speed = 0.0f;   // 如果碰撞，竖直速度为0
-            p->y = ei->rect.y;      // 将玩家的y坐标设置为碰撞物体的y坐标
-            if (IsKeyDown(KEY_S))   // 下落
+            hitObstacle = 1;                            // 碰撞
+            player->speed = 0.0f;                       // 如果碰撞，竖直速度为0
+            p->y = ei->rect.y; 
+            player->canJump =true; 
+            player->jumpt=2;                            // 将玩家的y坐标设置为碰撞物体的y坐标
+            player->ajumpt = 0;                         // 重置 空跳计时器
+            if (IsKeyDown(KEY_S))                       // 平台下落
             {player->speedh = 0;
             p->y += 1;}
         }
@@ -314,14 +314,9 @@ if (player->boostt<0)
     {
         player->position.y += player->speed*delt;       //更新y坐标 下坠
         player->speed += G*delt;                        // 重力加速度
-        player->canJump = false;                        // 不可以跳跃
+        player->canJump = false; 
+        player->ajumpt ++;                       // 不可以跳跃
     }
-    else {player->canJump =true; 
-    player->jumpt=2; 
-    }                        // 可以跳跃
-    //else player->canJump2 =true;                        
-
-
 
     if (player->position.y>1000 || player->position.x<-500  || player->position.x>15000)   // 重生
     {    
