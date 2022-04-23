@@ -304,7 +304,7 @@ void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float d
             player->canJump =true; 
             player->jumpt=2;                            // 将玩家的y坐标设置为碰撞物体的y坐标
             player->ajumpt = 0;                         // 重置 空跳计时器
-            if (IsKeyDown(KEY_S))                       // 平台下落
+            if (IsKeyDown(KEY_S))                       // 下台阶
             {player->speedh = 0;
             p->y += 1;}
         }
@@ -312,11 +312,40 @@ void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float d
 
     if (!hitObstacle)                                   // 如果没有碰撞到环境物体 
     {
-        player->position.y += player->speed*delt;       //更新y坐标 下坠
-        player->speed += G*delt;                        // 重力加速度
-        player->canJump = false; 
-        player->ajumpt ++;                       // 不可以跳跃
+        player->position.y += player->speed*delt;       // 竖直位移
+        
+        if (player->speed>=0)                           // 快速下落
+        {
+            player->speed += 2.5*G*delt;  
+            player->canJump = false; 
+            player->ajumpt ++; 
+        }
+
+         else if(player->speed<0)                        // 
+        {
+            if (IsKeyDown(KEY_SPACE) && player->jumpt==1) //长按检测 跳得更高
+            {
+                player->speed += G*delt;
+                player->canJump = false;
+                player->ajumpt ++;                      // 不可以跳跃
+            }
+
+            else
+            {
+                player->speed += 2*G*delt;              // 正常G
+                player->canJump = false;                // 不可以跳跃
+                player->ajumpt ++; 
+            }
+        }                    
     }
+
+
+
+
+
+
+
+
 
     if (player->position.y>1000 || player->position.x<-500  || player->position.x>15000)   // 重生
     {    
