@@ -18,7 +18,7 @@
 #define G 400
 #define PLAYER_JUMP_SPD 350.0f // 跳跃速度
 #define PLAYER_HOR_SPD 200.0f // 地速
-#define PLAYER_MAX_SHOOTS   1000000
+#define PLAYER_MAX_SHOOTS   10
 
 
 typedef struct Player {
@@ -39,10 +39,23 @@ typedef struct Shoot {
     Vector2 speed;
     float radius;
     //float rotation;
-    int lifeSpawn;
-    bool active;
+    int lifetime;
+    bool out;
     Color color;
 } Shoot;
+
+typedef struct Cloud {
+    Vector2 position;
+    Vector2 speed;
+    float radius;
+    //float rotation;
+    int lifetime;
+    bool out;
+    Color color;
+} Cloud;
+
+
+
 
 typedef struct EnvItem { 
     Rectangle rect; // 矩形
@@ -51,22 +64,20 @@ typedef struct EnvItem {
 } EnvItem;
 
 const int screenWidth = 1300;
-const int screenHeight = 600; //窗口尺寸
+const int screenHeight = 800; //窗口尺寸
 Shoot shoot[PLAYER_MAX_SHOOTS] = { 0 };
 
-
-
-void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float delt);
+void UpdatePlayer(Player *player, EnvItem *envItems, Shoot *shoot, int envItemsLength,int shootLength, float delt);
 
 void UpdateCameraCenterSmoothFollow(Camera2D *camera, Player *player, EnvItem *envItems, int envItemsLength, float delt, int width, int height);
 
 int main(void)
 {
     // Initialization
-    //--------------------------------------------------------------------------------------
+ //--------------------------------------------------------------------------------------
 
-    InitWindow(screenWidth, screenHeight, "game"); //初始化窗口
-    SetTargetFPS(60); //设置帧率
+    InitWindow(screenWidth, screenHeight, "game");              //初始化窗口
+    SetTargetFPS(60);                                           //设置帧率
 
 
 
@@ -74,8 +85,8 @@ int main(void)
     Texture2D bgTexture = LoadTextureFromImage(bgImage);  
     UnloadImage(bgImage);
 
-    //Vector2 aimPosition = { 0, 0 }; // 准星位置
-    //int currentGesture = GESTURE_NONE; // 当前手势
+    //Vector2 aimPosition = { 0, 0 };                                       // 准星位置
+    //int currentGesture = GESTURE_NONE;                                    // 当前手势
     Player player = { 0 };
     player.position = (Vector2){ 400, 280 };
     player.speed = 0;
@@ -90,24 +101,24 @@ int main(void)
         shoot[i].position = (Vector2){0, 0};
         shoot[i].speed = (Vector2){0, 0};
         shoot[i].radius = 5;
-        shoot[i].active = false;
-        shoot[i].lifeSpawn = 0;
+        shoot[i].out = false;
+        shoot[i].lifetime = 0;
         shoot[i].color = GREEN;
     }
     //
 
     EnvItem envItems[] = {
-        //{{ 0, 0, 1000, 400 }, 0, LIGHTGRAY }, // x起点 y起点 长 宽 阻挡   地图数据
-        {{ 0, 400, 1000, 10 }, 1, GRAY }, //地面
-        {{ 300, 200, 400, 10 }, 1, GRAY }, // 上
-        {{ 250, 300, 100, 10 }, 1, GRAY }, // 左
+        //{{ 0, 0, 1000, 400 }, 0, LIGHTGRAY },                             // x起点 y起点 长 宽 阻挡   地图数据
+        {{ 0, 400, 1000, 10 }, 1, GRAY },                                   //地面
+        {{ 300, 200, 400, 10 }, 1, GRAY },                                  // 上
+        {{ 250, 300, 100, 10 }, 1, GRAY },                                  // 左
         {{ 650, 300, 100, 10 }, 1, GRAY },
         {{ 1050, 300, 100, 10 }, 1, GRAY },
         {{ 1450, 300, 100, 10 }, 1, GRAY }, // 右
     };                                      
 
     int envItemsLength = sizeof(envItems)/sizeof(envItems[0]); //sizeo获取数据在内存中占用的字节数 有多少个元素
-
+    int shootLength = sizeof(shoot)/sizeof(shoot[0]);
 
     Camera2D camera = { 0 };
     camera.target = player.position;
@@ -115,24 +126,8 @@ int main(void)
     camera.rotation = 0.0f;
     camera.zoom = 1.0f;
 
-    // Store pointers to the multiple update camera functions
-    void (*cameraUpdaters[])(Camera2D*, Player*, EnvItem*, int, float, int, int) = {
-        UpdateCameraCenterSmoothFollow,
-    };
+ //--------------------------------------------------------------------------------------
 
-    int cameraOption = 0;
-    int cameraUpdatersLength = sizeof(cameraUpdaters)/sizeof(cameraUpdaters[0]);
-
-    char *cameraDescriptions[] = {                             
-        "Follow player center; smoothed",
-    };
-
-    //--------------------------------------------------------------------------------------
-
-
-
-
-  
     // Main game loop
     while (!WindowShouldClose())
     {
@@ -140,7 +135,7 @@ int main(void)
         //----------------------------------------------------------------------------------
         float deltaTime = GetFrameTime();                                   // Get time in seconds for last frame drawn (delta time) 一帧时间
 
-        UpdatePlayer(&player, envItems, envItemsLength, deltaTime);
+        UpdatePlayer(&player, envItems, shoot, envItemsLength, shootLength, deltaTime);
 
         camera.zoom += ((float)GetMouseWheelMove()*0.05f);                  //滚轮缩放视角
 
@@ -154,7 +149,7 @@ int main(void)
         }
 
         // Call update camera function by its pointer
-        cameraUpdaters[cameraOption](&camera, &player, envItems, envItemsLength, deltaTime, screenWidth, screenHeight);
+        UpdateCameraCenterSmoothFollow(&camera, &player, envItems, envItemsLength, deltaTime, screenWidth, screenHeight);
         //----------------------------------------------------------------------------------
 
         // Draw
@@ -163,9 +158,11 @@ int main(void)
 
             ClearBackground(LIGHTGRAY); //清屏
 
-            
             BeginMode2D(camera);
-                DrawTexture(bgTexture, -500, -200, WHITE);                                                         // 背景
+
+                DrawTexture(bgTexture, -500, -200, WHITE);
+                          
+                                                                       // 背景
                 for (int i = 0; i < envItemsLength; i++) DrawRectangleRec(envItems[i].rect, envItems[i].color); // 画地图
 
                 Rectangle playerRect = { player.position.x - 40, player.position.y - 40, 40, 40 };
@@ -181,7 +178,7 @@ int main(void)
                                                                                                                 // Draw shoot
                 for (int i = 0; i < PLAYER_MAX_SHOOTS; i++)
                 {
-                    if (shoot[i].active) DrawCircleV(shoot[i].position, shoot[i].radius, YELLOW);
+                    if (shoot[i].out) DrawCircleV(shoot[i].position, shoot[i].radius, YELLOW);
                 }
 
 
@@ -200,7 +197,7 @@ int main(void)
             DrawText(TextFormat("jumpt = %d", player.jumpt), 40 , 360, 20, BLACK);
             DrawText(TextFormat("BOOST = %d", player.boostt),40, 380,20, BLACK);
             DrawText(TextFormat("ajumpt = %d",player.ajumpt),40, 400,20, BLACK);
-            DrawText(TextFormat("Follow player center; smoothed"), 250, 165, 10, DARKGRAY);
+            DrawText("Follow player center; smoothed", 250, 165, 10, DARKGRAY);
 
             DrawRectangleLines(650, 50, 20, 20,BLACK);
             if (IsKeyDown(KEY_A)) DrawRectangle(650, 50, 20, 20,DARKGRAY);
@@ -240,15 +237,15 @@ int main(void)
     return 0;
 }
 
-void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float delt)
+void UpdatePlayer(Player *player, EnvItem *envItems,Shoot *shoot, int envItemsLength, int shootLength, float delt)
 {   
     player->position.x += player->speedh*delt; // 水平移动
 
     if (IsKeyDown(KEY_A))                         
     {
         // player->position.x += player->speed*delt; 
-        if(player->speedh>0)
-        player->speedh = 0;                                                 // 急停
+        //if(player->speedh>0)
+        // player->speedh = 0;                                                 // 急停
         player->speedh -= G*delt; 
         player->towards = -1;                                               // 向左跑
     }
@@ -256,8 +253,8 @@ void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float d
     if (IsKeyDown(KEY_D)) 
     {
         // player->position.x += player->speed*delt; 
-        if(player->speedh<0)
-        player->speedh = 0;                                                 // 急停
+        //if(player->speedh<0)
+        //player->speedh = 0;                                                 // 急停
         player->speedh += G*delt; 
         player->towards = 1;                                                // 向右跑
     }
@@ -270,13 +267,13 @@ void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float d
             {
                 player->speed = -PLAYER_JUMP_SPD;
                 player->jumpt =1;
-                player->canJump = false;
+                // player->canJump = false;
             }
 
             else if(player->ajumpt>10)
             {
                 player->speed = -PLAYER_JUMP_SPD;
-                player->jumpt -=3;
+                player->jumpt -=2;
             }
         }
 
@@ -382,12 +379,71 @@ void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float d
         }                    
     }
 
+    for (int i = 0; i < shootLength; i++)
+    {
+        Shoot *ei = shoot + i;                                 // 指针指向第i个元素
+        Vector2 *p = &(player->position);
+
+        if (ei->position.x > p->x-40 &&
+            ei->position.x < p->x-20 &&    // 速度太快打不到
+            ei->position.y > p->y-40 &&
+            ei->position.y < p->y &&
+            ei->speed.x > 0 &&
+            shoot[i].out )                 // 玩家下一帧在下方
+        {
+            p->x += 50;                     // 子弹击退
+            player->speedh = 300;                  
+              shoot[i].out = false;      
+        }
+
+
+
+
+
+
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     if (player->position.y>1000 || player->position.x<-500  || player->position.x>15000)   // 重生
     {    
         player->position.y = -100;
         player->position.x = 500;
         player->speed = 0;
         player->speedh = 0;
+        for (int i = 0; i < PLAYER_MAX_SHOOTS; i++) shoot[i].out = false;
     }
 
         // Player shoot logic
@@ -395,11 +451,11 @@ void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float d
             {
                 for (int i = 0; i < PLAYER_MAX_SHOOTS; i++)
                 {
-                    if (!shoot[i].active)
+                    if (!shoot[i].out)                                                                  // 有子弹没射出
                     {
-                        shoot[i].position = (Vector2){ player->position.x-20 , player->position.y-20 };
-                        shoot[i].active = true;
-                        shoot[i].speed.x = player->towards *10;
+                        shoot[i].position = (Vector2){ player->position.x+200 , player->position.y-20 }; // 枪口位置
+                        shoot[i].out = true;                                            
+                        shoot[i].speed.x = player->towards *1;                                         // 子弹初速度
                         break;
                     }
                 }
@@ -408,71 +464,35 @@ void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float d
             // Shoot life timer
             for (int i = 0; i < PLAYER_MAX_SHOOTS; i++)
             {
-                if (shoot[i].active) shoot[i].lifeSpawn++;
+                if (shoot[i].out) shoot[i].lifetime++;
             }
 
             // Shot logic
             for (int i = 0; i < PLAYER_MAX_SHOOTS; i++)
             {
-                if (shoot[i].active)
+                if (shoot[i].out)
                 {
                     // Movement
                     shoot[i].position.x += shoot[i].speed.x;
                 }
+
+                // Life of shoot
+                if (shoot[i].lifetime >= 800)
+                {
+                    shoot[i].position = (Vector2){0, 0};
+                    shoot[i].speed = (Vector2){0, 0};
+                    shoot[i].lifetime = 0;
+                    shoot[i].out = false;
+                }
+                
             }
-
-
-
-
-
-
-                    
-//                    // Collision logic: shoot vs walls
-//                    if  (shoot[i].position.x > screenWidth + shoot[i].radius)
-//                    {
-//                        shoot[i].active = false;
-//                        shoot[i].lifeSpawn = 0;
-//                    }
-//                    else if (shoot[i].position.x < 0 - shoot[i].radius)
-//                    {
-//                        shoot[i].active = false;
-//                        shoot[i].lifeSpawn = 0;
-//                    }
-//                    if (shoot[i].position.y > screenHeight + shoot[i].radius)
-//                    {
-//                        shoot[i].active = false;
-//                        shoot[i].lifeSpawn = 0;
-//                    }
-//                    else if (shoot[i].position.y < 0 - shoot[i].radius)
-//                    {
-//                        shoot[i].active = false;
-//                        shoot[i].lifeSpawn = 0;
-//                    }
-//
-//                    // Life of shoot
-//                    if (shoot[i].lifeSpawn >= 60)
-//                    {
-//                        shoot[i].position = (Vector2){0, 0};
-//                        shoot[i].speed = (Vector2){0, 0};
-//                        shoot[i].lifeSpawn = 0;
-//                        shoot[i].active = false;
-//                    }
-            //     }
-            // }
-
-
 
 }
 //--------------------------------------------------------------------------------------
 
-
-
-
-
-
 void UpdateCameraCenterSmoothFollow(Camera2D *camera, Player *player, EnvItem *envItems, int envItemsLength, float delt, int width, int height)
 {
-    static float minSpeed = 30;
+    static float minSpeed = 50;
     static float minEffectLength = 10;
     static float fractionSpeed = 0.8f;                              
 
