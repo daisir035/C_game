@@ -13,7 +13,6 @@
 
 #include "raylib.h"
 #include "raymath.h"
-#include <time.h>
 
 #define G 400
 #define PLAYER_JUMP_SPD 350.0f // 跳跃速度
@@ -26,9 +25,8 @@ typedef struct Player {
     float speed;
     float speedh;
     int jumpt;
-    int jumpt2;
     int ajumpt;
-    int boostt; // 是
+    int boostt;
     bool canJump;
     bool boost;
     Color Color;
@@ -38,7 +36,6 @@ typedef struct Shoot {
     Vector2 position;
     Vector2 speed;
     float radius;
-    //float rotation;
     int lifetime;
     bool out;
     Color color;
@@ -57,7 +54,6 @@ Shoot shoot2[PLAYER_MAX_SHOOTS] = { 0 };
 
 void UpdatePlayer(Player *player, EnvItem *envItems, Shoot *shoot, Shoot *shoot2,int envItemsLength,int shootLength, float delt);
 void UpdatePlayer2(Player *player2, EnvItem *envItems, Shoot *shoot, Shoot *shoot2, int envItemsLength,int shootLength2, float delt);
-
 void UpdateCameraCenterSmoothFollow(Camera2D *camera, Player *player, EnvItem *envItems, int envItemsLength, float delt, int width, int height);
 
 int main(void)
@@ -68,9 +64,7 @@ int main(void)
     InitWindow(screenWidth, screenHeight, "game");              //初始化窗口
     SetTargetFPS(60);                                           //设置帧率
 
-
-
-    Image bgImage = LoadImage("33.png");                        // 背景材质
+    Image bgImage = LoadImage("33.png");                        // 背景纹理
     Texture2D bgTexture = LoadTextureFromImage(bgImage);  
     UnloadImage(bgImage);
 
@@ -88,9 +82,7 @@ int main(void)
     player2.canJump = 2;
     player2.towards = 1;
 
-
     // Initialization shoot 子弹
-    
     for (int i = 0; i < PLAYER_MAX_SHOOTS; i++)
     {
         shoot[i].position = (Vector2){0, 0};
@@ -113,13 +105,13 @@ int main(void)
     //
 
     EnvItem envItems[] = {
-        //{{ 0, 0, 1000, 400 }, 0, LIGHTGRAY },                             // x起点 y起点 长 宽 阻挡   地图数据
-        {{ 0, 400, 1000, 10 }, 1, GRAY },                                   //地面
-        {{ 300, 200, 400, 10 }, 1, GRAY },                                  // 上
-        {{ 250, 300, 100, 10 }, 1, GRAY },                                  // 左
+        //{{ 0, 0, 1000, 400 }, 0, LIGHTGRAY }, // x起点 y起点 长 宽 碰撞   地图数据
+        {{ 0, 400, 1000, 10 }, 1, GRAY },     //地面
+        {{ 300, 200, 400, 10 }, 1, GRAY },    // 上
+        {{ 250, 300, 100, 10 }, 1, GRAY },    // 左
         {{ 650, 300, 100, 10 }, 1, GRAY },
         {{ 1050, 300, 100, 10 }, 1, GRAY },
-        {{ 1450, 300, 100, 10 }, 1, GRAY }, // 右
+        {{ 1450, 300, 100, 10 }, 1, GRAY },   // 右
     };                                      
 
     int envItemsLength = sizeof(envItems)/sizeof(envItems[0]); //sizeo获取数据在内存中占用的字节数 有多少个元素
@@ -154,10 +146,8 @@ int main(void)
             player.position = (Vector2){ 400, 280 };                        // 重置位置
         }
 
-        // Call update camera function by its pointer
         UpdateCameraCenterSmoothFollow(&camera, &player, envItems, envItemsLength, deltaTime, screenWidth, screenHeight);
         //----------------------------------------------------------------------------------
-
         // Draw
         //----------------------------------------------------------------------------------
         BeginDrawing();
@@ -166,12 +156,10 @@ int main(void)
 
             BeginMode2D(camera);
 
-                DrawTexture(bgTexture, -5000, -2000, WHITE);
-                          
-                                                                       // 背景
+                DrawTexture(bgTexture, -5000, -2000, WHITE);           // 背景
                 for (int i = 0; i < envItemsLength; i++) DrawRectangleRec(envItems[i].rect, envItems[i].color); // 画地图
 
-                Rectangle playerRect = { player.position.x - 40, player.position.y - 40, 40, 40 };
+                Rectangle playerRect = { player.position.x - 40, player.position.y - 40, 40, 40 }; //画方块
                 DrawRectangleRec(playerRect, RED);
 
                 Rectangle player2Rect = { player2.position.x - 40, player2.position.y - 40, 40, 40 };
@@ -193,9 +181,6 @@ int main(void)
             DrawText("Controls:", 20, 20, 20, BLACK);                                   //ui文字 坐标(左上原点),字号, 颜色,ui文字
             DrawText("- Right/Left to move", 40, 60, 20, DARKGRAY);
             DrawText("- Space to jump", 40, 100, 20, DARKGRAY);
-            DrawText("- Mouse Wheel to Zoom in-out, R to reset zoom", 40, 80, 0, DARKGRAY);
-            DrawText("- C to change camera mode", 40, 140, 20, DARKGRAY);
-            DrawText("Current camera mode:", 20, 160, 20, BLACK);
             DrawText(TextFormat("x = %2.3f", player.position.x), 40 , 200, 20, BLACK);
             DrawText(TextFormat("y = %2.3f", player.position.y), 40 , 240, 20, BLACK);
             DrawText(TextFormat("x speed = %f", player.speedh), 40 , 280, 20, BLACK);
@@ -203,7 +188,6 @@ int main(void)
             DrawText(TextFormat("jumpt = %d", player.jumpt), 40 , 360, 20, BLACK);
             DrawText(TextFormat("BOOST = %d", player.boostt),40, 380,20, BLACK);
             DrawText(TextFormat("ajumpt = %d",player.ajumpt),40, 400,20, BLACK);
-            DrawText("Follow player center; smoothed", 250, 165, 10, DARKGRAY);
 
             DrawRectangleLines(650, 50, 20, 20,BLACK);
             if (IsKeyDown(KEY_A)) DrawRectangle(650, 50, 20, 20,DARKGRAY);
@@ -239,7 +223,6 @@ int main(void)
     UnloadTexture(bgTexture); // Unload background texture
     // De-Initialization
     //--------------------------------------------------------------------------------------
-    UnloadTexture(bgTexture);
     CloseWindow();        // Close window and OpenGL context
     //--------------------------------------------------------------------------------------
 
@@ -252,23 +235,21 @@ void UpdatePlayer(Player *player, EnvItem *envItems, Shoot *shoot, Shoot *shoot2
 
     if (IsKeyDown(KEY_A))                         
     {
-        // player->position.x += player->speed*delt; 
-        if(player->speedh>0)
-        player->speedh = 0;                                                 // 急停
+        //if(player->speedh>0)
+        //player->speedh = 0;                                                // 急停
         player->speedh -= G*delt; 
-        player->towards = -1;                                               // 向左跑
+        player->towards = -1;                                               // 向左
     }
 
     if (IsKeyDown(KEY_D)) 
     {
-        // player->position.x += player->speed*delt; 
-        if(player->speedh<0)
-        player->speedh = 0;                                                 // 急停
+        //if(player->speedh<0)
+        //player->speedh = 0;                                                // 急停
         player->speedh += G*delt; 
-        player->towards = 1;                                                // 向右跑
+        player->towards = 1;                                                // 向右
     }
     
-    if (IsKeyPressed(KEY_SPACE) && player->jumpt>0 ) // 跳 空跳 二段跳 2d跳跃想要好的跳跃手感最好是用非物理的方式，手动模拟重力，计算跳跃
+    if (IsKeyPressed(KEY_SPACE) && player->jumpt>0 ) // 跳 空跳 二段跳 
     {
         if (player->jumpt==2)
         {
@@ -293,22 +274,16 @@ void UpdatePlayer(Player *player, EnvItem *envItems, Shoot *shoot, Shoot *shoot2
         }
     }
 
-    if (player->speed < 600 && player->speed >-600)                             // 闪现cd
-    {
-        player->boostt +=1;                                                     // 充能数值
-    }
-    if (player->boostt>50)                                                      // 充能阈值
-    {
-        player->boost  = true;
-    }
+    player->boostt +=1;     // 闪现计时器
+    if (player->boostt>50) player->boost  = true;// 闪现阈值
 
-    if (IsKeyPressed(KEY_LEFT_SHIFT) && player->boost)                          //闪现
+    if (IsKeyPressed(KEY_LEFT_SHIFT) && player->boost)  //闪现
     {
         if (IsKeyDown(KEY_D))
         {
             player->position.x += 200;
-            player->boostt = 0;
-            player->boost  = false;
+            player->boostt = 0;     //重置闪现cd
+            player->boost  = false; //关闭闪现开关
         }
 
         else if(IsKeyDown(KEY_A))
@@ -390,7 +365,7 @@ void UpdatePlayer(Player *player, EnvItem *envItems, Shoot *shoot, Shoot *shoot2
 
     for (int i = 0; i < shootLength; i++)
     {
-        Shoot *ei = shoot2 + i;                                 // 指针指向第i个元素
+        Shoot *ei = shoot2 + i;                   
         Vector2 *p = &(player->position);
 
         if (ei->position.x > p->x-40 &&
@@ -410,63 +385,54 @@ void UpdatePlayer(Player *player, EnvItem *envItems, Shoot *shoot, Shoot *shoot2
             ei->position.y > p->y-40 &&
             ei->position.y < p->y &&
             ei->speed.x < 0 &&
-            shoot2[i].out )                 // 玩家下一帧在下方
+            shoot2[i].out )                 
         {
             p->x -= 50;                     // 子弹击退
-            player->speedh -= 300;                  
-              shoot2[i].out = false;      
+            player->speedh -= 300;          // 速度       
+              shoot2[i].out = false;        // 子弹消失
         }        
-
-
-
-
-
 
     }
 
-        // Player shoot logic
+        // 射击
             if (IsKeyPressed(KEY_J))
             {
                 for (int i = 0; i < PLAYER_MAX_SHOOTS; i++)
                 {
                     if (!shoot[i].out)                                                                  // 有子弹没射出
                     {
-                        if (player->towards == 1)
+                        if (player->towards == 1)                                                       //朝向
                         {
-                            shoot[i].position = (Vector2){ player->position.x+2 , player->position.y-20 };
+                            shoot[i].position = (Vector2){ player->position.x+2 , player->position.y-20 };// 枪口位置
                         }
                         
-                        else if (player->towards == -1)
+                        else if (player->towards == -1)                                                  //朝向
                         {
-                            shoot[i].position = (Vector2){ player->position.x-42 , player->position.y-20 };
+                            shoot[i].position = (Vector2){ player->position.x-42 , player->position.y-20 };// 枪口位置
                         }
                         shoot[i].out = true;                                            
-                        shoot[i].speed.x = player->towards *2;                                         // 子弹初速度
+                        shoot[i].speed.x = player->towards *10;                                         // 子弹初速度
                         break;
                     }
                 }
             }
 
-            // Shoot life timer
             for (int i = 0; i < PLAYER_MAX_SHOOTS; i++)
             {
-                if (shoot[i].out) shoot[i].lifetime++;
+                if (shoot[i].out) shoot[i].lifetime++;         // 子弹生命计数器
             }
 
-            // Shot logic
             for (int i = 0; i < PLAYER_MAX_SHOOTS; i++)
             {
                 if (shoot[i].out)
                 {
-                    // Movement
-                    shoot[i].position.x += shoot[i].speed.x;
+                    shoot[i].position.x += shoot[i].speed.x;    // 子弹移动
                 }
 
-                // Life of shoot
-                if (shoot[i].lifetime >= 200)                   // 射程 换弹 200足够大
+                if (shoot[i].lifetime >= 200)                   // 超过射程 小时
                 {
                     shoot[i].position = (Vector2){0, 0};
-                    shoot[i].speed = (Vector2){0, 0};
+                    shoot[i].speed = (Vector2){0, 0};           // 实际仅有x速度
                     shoot[i].lifetime = 0;
                     shoot[i].out = false;
                 }
@@ -484,16 +450,14 @@ void UpdatePlayer(Player *player, EnvItem *envItems, Shoot *shoot, Shoot *shoot2
 
 }
 
-
 void UpdatePlayer2(Player *player2, EnvItem *envItems,Shoot *shoot, Shoot *shoot2, int envItemsLength, int shootLength, float delt)
 {   
     player2->position.x += player2->speedh*delt; // 水平移动
 
     if (IsKeyDown(KEY_LEFT))                         
     {
-        // player->position.x += player->speed*delt; 
-        if(player2->speedh>0)
-        player2->speedh = 0;                                                 // 急停
+        //if(player2->speedh>0)
+        //player2->speedh = 0;                                                 // 急停
         player2->speedh -= G*delt; 
         player2->towards = -1;                                               // 向左跑
     }
@@ -501,13 +465,13 @@ void UpdatePlayer2(Player *player2, EnvItem *envItems,Shoot *shoot, Shoot *shoot
     if (IsKeyDown(KEY_RIGHT)) 
     {
         // player->position.x += player->speed*delt; 
-        if(player2->speedh<0)
-        player2->speedh = 0;                                                 // 急停
+        //if(player2->speedh<0)
+        //player2->speedh = 0;                                                 // 急停
         player2->speedh += G*delt; 
         player2->towards = 1;                                                // 向右跑
     }
     
-    if (IsKeyPressed(KEY_UP) && player2->jumpt>0 ) // 跳 空跳 二段跳 2d跳跃想要好的跳跃手感最好是用非物理的方式，手动模拟重力，计算跳跃
+    if (IsKeyPressed(KEY_UP) && player2->jumpt>0 ) // 跳 空跳 二段跳 
     {
         if (player2->jumpt==2)
         {
@@ -588,7 +552,6 @@ void UpdatePlayer2(Player *player2, EnvItem *envItems,Shoot *shoot, Shoot *shoot
             hitObstacle = 1;                                        // 碰撞
             player2->speed = 0.0f;                                   // 如果碰撞，竖直速度为0
             p->y = ei->rect.y; 
-            player2->canJump =true; 
             player2->jumpt=2;                                        // 将玩家的y坐标设置为碰撞物体的y坐标
             player2->ajumpt = 0;                                     // 重置 空跳计时器
                                      
@@ -601,28 +564,23 @@ void UpdatePlayer2(Player *player2, EnvItem *envItems,Shoot *shoot, Shoot *shoot
     if (!hitObstacle)                                               // 如果没有碰撞到环境物体 
     {
         player2->position.y += player2->speed*delt;                   // 竖直位移
-        
+        player2->ajumpt ++; 
+
         if (player2->speed>=0)                                       // 快速下落
         {
             player2->speed += 2.5*G*delt;  
-            player2->canJump = false; 
-            player2->ajumpt ++; 
         }
 
         else if(player2->speed<0)                                    // 
         {
             if (IsKeyDown(KEY_UP)&& player2->jumpt==1)           // 长按检测 跳得更高
             {
-                player2->speed += G*delt;
-                player2->canJump = false;
-                player2->ajumpt ++;                                   // 不可以跳跃
+                player2->speed += G*delt;                                 // 不可以跳跃
             }
 
             else
             {
-                player2->speed += 2.2*G*delt;                        // 正常G
-                player2->canJump = false;                            // 不可以跳跃
-                player2->ajumpt ++; 
+                player2->speed += 2.2*G*delt;                        // 正常G                        // 不可以跳跃
             }
         }                    
     }
@@ -714,7 +672,6 @@ void UpdatePlayer2(Player *player2, EnvItem *envItems,Shoot *shoot, Shoot *shoot
                 
             }
 }
-        //--------------------------------------------------------------------------------------------  
 
 void UpdateCameraCenterSmoothFollow(Camera2D *camera, Player *player, EnvItem *envItems, int envItemsLength, float delt, int width, int height)
 {
