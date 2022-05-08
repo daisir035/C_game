@@ -83,6 +83,7 @@ int main(void)
     player2.towards = 1;
 
     // Initialization shoot 子弹
+
     for (int i = 0; i < PLAYER_MAX_SHOOTS; i++)
     {
         shoot[i].position = (Vector2){0, 0};
@@ -211,11 +212,31 @@ int main(void)
             DrawRectangleLines(550,75, 80, 20,BLACK);                               
             if (IsKeyDown(KEY_LEFT_SHIFT)) DrawRectangle(550,75, 80, 20,DARKGRAY);
 
-            DrawRectangleLines(40,440, 20, 20,BLACK);
-            if (player.boost) DrawRectangle(40,440, 20, 20,GREEN);                      // 闪现指示器
-
+            DrawRectangle(380,630, 190, 160,LIGHTGRAY);
+            DrawRectangle(510,650, 40,40,RED);
+            DrawText("PLAYER", 400, 650, 20, BLACK);
+            DrawText("overheat", 400, 750, 20, BLACK); 
+            DrawRectangleLines(500,750, 20, 20,BLACK);            
             if (shoot[9].out == true && shoot[0].out == true) 
-            DrawText("overheat", 40, 480, 20, BLACK);                                   //枪口过热
+            DrawRectangle(500,750, 19, 19,ORANGE);                                  //枪口过热 
+            DrawText("flash", 400, 700, 20, BLACK);   
+            DrawRectangleLines(460,700, 20, 20,BLACK);
+            if (player.boost) DrawRectangle(460,700, 19, 19,YELLOW);                      // 闪现指示器   
+            
+            DrawRectangle(680,630, 190, 160,LIGHTGRAY);
+            DrawRectangle(810,650, 40,40,GREEN);
+            DrawText("PLAYER2", 700, 650, 20, BLACK);
+            DrawText("overheat", 700, 750, 20, BLACK); 
+            DrawRectangleLines(800,750, 20, 20,BLACK);            
+            if (shoot2[9].out == true && shoot2[0].out == true) 
+            DrawRectangle(800,750, 19, 19,ORANGE);                                  //枪口过热 
+            DrawText("flash", 700, 700, 20, BLACK);   
+            DrawRectangleLines(760,700, 20, 20,BLACK);
+            if (player2.boost) DrawRectangle(760,700, 19, 19,YELLOW);                      // 闪现指示器 
+               
+        
+
+            
 
         EndDrawing();
         //----------------------------------------------------------------------------------
@@ -505,7 +526,7 @@ void UpdatePlayer2(Player *player2, EnvItem *envItems,Shoot *shoot, Shoot *shoot
         player2->boost  = true;
     }
 
-    if (IsKeyPressed(KEY_KP_1) && player2->boost)                          //闪现
+    if (IsKeyPressed(KEY_KP_2) && player2->boost)                          //闪现
     {
         if (IsKeyDown(KEY_DOWN))
         {
