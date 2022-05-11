@@ -1,3 +1,4 @@
+
 #include "raylib.h"
 #include "raymath.h"
 
@@ -5,6 +6,8 @@
 #define PLAYER_JUMP_SPD 350.0f // 跳跃速度
 #define PLAYER_HOR_SPD 200.0f // 地速
 #define PLAYER_MAX_SHOOTS   10
+
+
 typedef struct Player {
     Vector2 position; // 位置
     float speed;
@@ -17,6 +20,7 @@ typedef struct Player {
     Color Color;
     int towards;  
 } Player;
+
 typedef struct Shoot {
     Vector2 position;
     Vector2 speed;
@@ -31,6 +35,8 @@ typedef struct EnvItem {
     int blocking; // 是否阻挡
     Color color; // 颜色
 } EnvItem;
+
+typedef enum GameScreen { LOGO = 0, TITLE, GAMEPLAY, ENDING } GameScreen;
 
 const int screenWidth = 1300;
 const int screenHeight = 800; //窗口尺寸
@@ -49,6 +55,9 @@ int main(void)
     InitWindow(screenWidth, screenHeight, "game");              //初始化窗口
     SetTargetFPS(60);                                           //设置帧率
 
+    GameScreen currentScreen = LOGO;
+    int framesCounter = 0;
+    
     Image bgImage = LoadImage("33.png");                        // 背景纹理
     Texture2D bgTexture = LoadTextureFromImage(bgImage);  
     UnloadImage(bgImage);
@@ -133,11 +142,77 @@ int main(void)
         }
 
         UpdateCameraCenterSmoothFollow(&camera, &player, envItems, envItemsLength, deltaTime, screenWidth, screenHeight);
+                switch(currentScreen)
+        {
+            case LOGO:
+            {
+                // TODO: Update LOGO screen variables here!
+
+                framesCounter++;    // Count frames
+
+                // Wait for 2 seconds (120 frames) before jumping to TITLE screen
+                if (framesCounter > 120)
+                {
+                    currentScreen = TITLE;
+                }
+            } break;
+            case TITLE:
+            {
+                // TODO: Update TITLE screen variables here!
+
+                // Press enter to change to GAMEPLAY screen
+                if (IsKeyPressed(KEY_ENTER) || IsGestureDetected(GESTURE_TAP))
+                {
+                    currentScreen = GAMEPLAY;
+                }
+            } break;
+            case GAMEPLAY:
+            {
+                // TODO: Update GAMEPLAY screen variables here!
+
+                // Press enter to change to ENDING screen
+                if (IsKeyPressed(KEY_ENTER) || IsGestureDetected(GESTURE_TAP))
+                {
+                    currentScreen = ENDING;
+                }
+            } break;
+            case ENDING:
+            {
+                // TODO: Update ENDING screen variables here!
+
+                // Press enter to return to TITLE screen
+                if (IsKeyPressed(KEY_ENTER) || IsGestureDetected(GESTURE_TAP))
+                {
+                    currentScreen = TITLE;
+                }
+            } break;
+            default: break;
+        }
         //----------------------------------------------------------------------------------
         // Draw
         //----------------------------------------------------------------------------------
         BeginDrawing();
+        ClearBackground(RAYWHITE);
 
+            switch(currentScreen)
+            {
+                case LOGO:
+                {
+                    // TODO: Draw LOGO screen here!
+                    DrawText("LOGO SCREEN", 20, 20, 40, LIGHTGRAY);
+                    DrawText("WAIT for 2 SECONDS...", 290, 220, 20, GRAY);
+
+                } break;
+                case TITLE:
+                {
+                    // TODO: Draw TITLE screen here!
+                    DrawRectangle(0, 0, screenWidth, screenHeight, GREEN);
+                    DrawText("TITLE SCREEN", 20, 20, 40, DARKGREEN);
+                    DrawText("PRESS ENTER or TAP to JUMP to GAMEPLAY SCREEN", 120, 220, 20, DARKGREEN);
+
+                } break;
+                case GAMEPLAY:
+                {
             ClearBackground(LIGHTGRAY); //清屏
 
             BeginMode2D(camera);
@@ -216,11 +291,17 @@ int main(void)
             DrawText("flash", 700, 700, 20, BLACK);   
             DrawRectangleLines(760,700, 20, 20,BLACK);
             if (player2.boost) DrawRectangle(760,700, 19, 19,YELLOW);                      // 闪现指示器 
-               
-        
 
-            
-
+                } break;
+                case ENDING:
+                {
+                    // TODO: Draw ENDING screen here!
+                    DrawRectangle(0, 0, screenWidth, screenHeight, BLUE);
+                    DrawText("ENDING SCREEN", 20, 20, 40, DARKBLUE);
+                    DrawText("PRESS ENTER or TAP to RETURN to TITLE SCREEN", 120, 220, 20, DARKBLUE);
+                } break;
+                default: break;
+            }
         EndDrawing();
         //----------------------------------------------------------------------------------
     }
@@ -511,7 +592,7 @@ void UpdatePlayer2(Player *player2, EnvItem *envItems,Shoot *shoot, Shoot *shoot
 
     if (IsKeyPressed(KEY_KP_2) && player2->boost)                          //闪现
     {
-        if (IsKeyDown(KEY_RIGHT))
+        if (IsKeyDown(KEY_DOWN))
         {
             player2->position.x += 200;
             player2->boostt = 0;
